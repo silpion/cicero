@@ -4,19 +4,19 @@
 use Silpion\Cicero\Cli\Application;
 
 call_user_func(function() {
-    require_once call_user_func(function() {
-        if (is_file($autoloadFile = __DIR__.'/../vendor/autoload.php')) {
-            return $autoloadFile;
-        }
+        require_once call_user_func(function() {
+                if (is_file($autoloadFile = __DIR__.'/../vendor/autoload.php')) {
+                    return $autoloadFile;
+                }
 
-        if (is_file($autoloadFile = __DIR__.'/../../../autoload.php')) {
-            return $autoloadFile;
-        }
+                if (is_file($autoloadFile = __DIR__.'/../../../autoload.php')) {
+                    return $autoloadFile;
+                }
 
-        echo 'Could not find autoload.php. Did you forget to run "composer install --dev"?'.PHP_EOL;
-        exit(1);
+                echo 'Could not find autoload.php. Did you forget to run "composer install --dev"?'.PHP_EOL;
+                exit(1);
+            });
+
+        $app = new Application();
+        $app->run();
     });
-
-    $app = new Application();
-    $app->run();
-});

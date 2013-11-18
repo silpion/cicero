@@ -12,7 +12,6 @@
         "symfony/console": "~2.3",
         "symfony/config": "~2.3",
         "symfony/process": "~2.3@dev",
-        "symfony/event-dispatcher": "~2.3",
         "psr/log": "~1.0",
 
         "composer/composer": "~1.0.0-alpha7",

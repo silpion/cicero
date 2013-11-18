@@ -11,6 +11,11 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Command\Command;
 
+/**
+ * Cicero RunCommand.
+ *
+ * @author Julius Beckmann <beckmann@silpion.de>
+ */
 class RunCommand extends Command
 {
     protected function configure()
@@ -18,14 +23,16 @@ class RunCommand extends Command
         $this
         ->setName('run')
         ->setDescription('Runs Cicero CI.')
-        ->addArgument('directory', InputArgument::REQUIRED, 'The directory that contains the .cicero.yml configuration.')
+        ->addArgument('directory', InputArgument::REQUIRED, 'The directory that contains the '.Cicero::CONFIG_NAME.' configuration.')
         ->addOption('build-path', 'bp', InputOption::VALUE_OPTIONAL, 'Path where build should be stored', 'build')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if (!is_dir($dir = $input->getArgument('directory'))) {
+        $dir = $input->getArgument('directory');
+
+        if (!is_dir($dir)) {
             $output->writeln(sprintf('<error>The directory "%s" does not exist.</error>', $dir));
 
             return 1;
@@ -34,6 +41,6 @@ class RunCommand extends Command
         $logger = new OutputLogger($output, $input->getOption('verbose'));
 
         $cicero = new Cicero($logger);
-        return $cicero->scrutinize($dir, $input->getOption('build-path'));
+        return (int)$cicero->run($dir, $input->getOption('build-path'));
     }
 }

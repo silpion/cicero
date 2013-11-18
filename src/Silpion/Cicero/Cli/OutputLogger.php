@@ -3,6 +3,7 @@
 namespace Silpion\Cicero\Cli;
 
 use Psr\Log\AbstractLogger;
+use Psr\Log\LogLevel;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class OutputLogger extends AbstractLogger
@@ -33,6 +34,15 @@ class OutputLogger extends AbstractLogger
             return;
         }
 
-        $this->output->write($message);
+        $message = rtrim($message);
+
+        switch ($level) {
+            case LogLevel::ERROR:
+            case LogLevel::WARNING:
+                $message = '<error>' . $message . '</error>';
+                break;
+        }
+
+        $this->output->write($message . PHP_EOL);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Silpion\Cicero\Tools;
 
-use Psr\Log\LoggerInterface;
 use Silpion\Cicero\Model\Project;
 
 interface ToolInterface
@@ -11,10 +10,9 @@ interface ToolInterface
      * Run the tool for the given project.
      *
      * @param Project $project
-     * @param LoggerInterface $logger
-     * @return mixed
+     * @return
      */
-    public function run(Project $project, LoggerInterface $logger = null);
+    public function run(Project $project);
 
     /**
      * The name of this tool.

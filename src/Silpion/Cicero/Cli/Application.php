@@ -6,6 +6,11 @@ use Silpion\Cicero\Cli\Command\RunCommand;
 
 use Symfony\Component\Console\Application as BaseApplication;
 
+/**
+ * Cicero Cli Application.
+ *
+ * @author Julius Beckmann <beckmann@silpion.de>
+ */
 class Application extends BaseApplication
 {
     public function __construct()

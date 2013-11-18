@@ -5,91 +5,156 @@ namespace Silpion\Cicero;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-use Silpion\Cicero\Events\ComposerEvent;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Silpion\Cicero\Tools\Composer\ComposerInstallTool;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Yaml\Yaml;
 
 use Silpion\Cicero\Logger\LoggableProcess;
+use Silpion\Cicero\Logger\ToolLogger;
 use Silpion\Cicero\Model\Project;
-use Silpion\Cicero\Events\CiceroEvents;
-use Silpion\Cicero\Events\AbstractEvent;
+use Silpion\Cicero\Tools\ToolInterface;
+use Silpion\Cicero\Tools\Php\PhpLintTool;
 
 /**
  * The Cicero CI tool.
  */
 class Cicero
 {
+    /**
+     * Name of the Cicero configuration file.
+     */
     const CONFIG_NAME = '.cicero.yml';
 
+    /**
+     * External logger to report to.
+     *
+     * @var LoggerInterface
+     */
     private $logger;
 
-    private $eventDispatcher;
+    /**
+     * @var ToolInterface[]
+     */
+    private $tools = array();
 
     public function __construct(LoggerInterface $logger = null)
     {
         $this->logger = $logger ? : new NullLogger();
-        $this->eventDispatcher = new EventDispatcher();
 
-        $this->registerDefaultListeners();
+        $this->addDefaultTools();
     }
 
-    protected function registerDefaultListeners()
+    protected function addDefaultTools()
     {
-
+        $this->addComposerTools();
+        $this->addPhpTools();
     }
 
-    public function getEventDispatcher()
+    protected function addComposerTools()
     {
-        $this->eventDispatcher;
+        $this->addTool('composer', new ComposerInstallTool());
     }
 
-    public function scrutinize($dir, $buildPath)
+    protected function addPhpTools()
     {
+        $this->addTool('php', new PhpLintTool());
+    }
+
+    /**
+     * Adds a tool or a type.
+     *
+     * @param $type
+     * @param ToolInterface $tool
+     */
+    public function addTool($type, ToolInterface $tool)
+    {
+        $this->tools[$type][] = $tool;
+    }
+
+    /**
+     * Run cicero for the given directory and buildPath.
+     *
+     * @param $dir
+     * @param $buildPath
+     * @return bool
+     * @throws \InvalidArgumentException
+     * @throws \Exception
+     */
+    public function run($dir, $buildPath)
+    {
+        // Validate path.
         if (!is_dir($dir)) {
             throw new \InvalidArgumentException(sprintf('The directory "%s" does not exist.', $dir));
         }
         $dir = realpath($dir);
 
+        // Process config file.
         if (!is_file($dir . '/' . static::CONFIG_NAME)) {
             throw new \Exception("No config file found.");
         }
-
         $rawConfig = Yaml::parse(file_get_contents($dir . '/' . static::CONFIG_NAME));
-
-        //var_dump($rawConfig);
-
         $config = $this->getConfiguration()->process($rawConfig);
 
         //var_dump($config); die();
 
         $project = new Project($dir, $buildPath, $config);
 
-        $this->runComposer($project);
+        $this->runTools($project);
 
-       // $this->runPhp($project);
-/*
         if ($project->isFailed()) {
-            $this->logger->warning("---------------------------------\nRun failed! Check output for errors.\n");
+            $this->logger->warning('--------------------------------------');
+            $this->logger->warning(' Run failed! Check output for errors. ');
+            $this->logger->warning('--------------------------------------');
         }
-*/
+
         return $project->isFailed();
+    }
+
+    protected function runTools(Project $project)
+    {
+        $config = $project->getComposerConfig();
+        if($config['enabled'] && isset($this->tools['composer'])) {
+            $this->runToolsFromArray($this->tools['composer'], $project);
+        }
+
+        $config = $project->getPhpConfig();
+        if($config['enabled'] && isset($this->tools['php'])) {
+            $this->runToolsFromArray($this->tools['php'], $project);
+        }
+    }
+
+    protected function runToolsFromArray(array $tools, Project $project) {
+        foreach ($tools as $tool) {
+            $this->logger->info('');
+            $this->logger->debug('Running tool: '.$tool->getName());
+
+            $logger = $this->newLoggerForTool($tool);
+
+            $tool->setLogger($logger);
+            $tool->run($project);
+
+            if($tool->isSuccessfull()) {
+                $this->logger->debug('Tool '.$tool->getName().' finished successfull');
+            }else{
+                $this->logger->error('Tool '.$tool->getName().' ended with a error');
+                $project->setFailed(true);
+            }
+            $this->logger->info('');
+        }
+    }
+
+    private function newLoggerForTool(ToolInterface $tool)
+    {
+        $logger = new ToolLogger($this->logger);
+        $logger->setToolName($tool->getName());
+        return $logger;
     }
 
     private function getConfiguration()
     {
         return new Configuration();
-    }
-
-    private function outputEventResult(AbstractEvent $event) {
-        $output = $event->getOutput();
-
-        foreach($output as $toolName => $messages) {
-            $line = "[$toolName] ".$messages['message'];
-            $this->logger->notice($line);
-        }
     }
 
     private function runComposer(Project $project)

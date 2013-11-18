@@ -5,6 +5,11 @@ namespace Silpion\Cicero\Logger;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\Process;
 
+/**
+ * A process that will send each output line to a logger.
+ *
+ * @author Julius Beckmann <beckmann@silpion.de>
+ */
 class LoggableProcess extends Process
 {
     /** @var LoggerInterface */

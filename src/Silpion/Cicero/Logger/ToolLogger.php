@@ -1,14 +1,28 @@
 <?php
 
-namespace Silpion\Cicero\Tools;
+namespace Silpion\Cicero\Logger;
 
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ToolLogger extends AbstractLogger
 {
     private $messages = array();
+
+    private $toolName = '';
+
+    private $decoratedLogger = null;
+
+    public function __construct(LoggerInterface $logger = null)
+    {
+        $this->decoratedLogger = $logger;
+    }
+
+    public function setToolName($toolName) {
+        $this->toolName = $toolName;
+    }
 
     public function getMessages()
     {
@@ -24,6 +38,10 @@ class ToolLogger extends AbstractLogger
     {
         $exception = isset($context['exception']) ? $context['exception'] : null;
 
+        if($this->toolName && $message) {
+            $message = '    ['.$this->toolName.']  ' . $message;
+        }
+
         $this->messages[] = array(
             'timestamp' => new \DateTime('now'),
             'level' => $level,
@@ -31,5 +49,9 @@ class ToolLogger extends AbstractLogger
             'context' => $context,
             'exception' => $exception,
         );
+
+        if($this->decoratedLogger) {
+            $this->decoratedLogger->log($level, $message, $context);
+        }
     }
 }
