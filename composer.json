@@ -1,0 +1,33 @@
+{
+    "name": "silpion/cicero",
+    "description": "PHP CI Abstraction tool",
+    "license": "proprietary",
+
+    "bin": ["bin/cicero"],
+
+    "require": {
+        "php": ">=5.4",
+
+        "symfony/yaml": "~2.3",
+        "symfony/console": "~2.3",
+        "symfony/config": "~2.3",
+        "symfony/process": "~2.3@dev",
+        "symfony/event-dispatcher": "~2.3",
+        "psr/log": "~1.0",
+
+        "composer/composer": "~1.0.0-alpha7",
+        "sensiolabs/security-checker": "~1.3",
+        "h4cc/phpqatools": "1.2",
+        "sami/sami": "~1.2"
+    },
+
+    "autoload": {
+        "psr-0": {
+            "Silpion\\Cicero": "src/"
+        }
+    },
+
+    "config": {
+        "bin-dir": "bin"
+    }
+}
